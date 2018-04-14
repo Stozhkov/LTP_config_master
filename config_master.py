@@ -96,7 +96,8 @@ def get_user_login(uid):
         row = cursor3.fetchone()
         return row[0]
     else:
-        return 'Undefined'
+        print 'Description was not found.'
+        return raw_input('Please input description: ')
 
 
 def add_new_unit_in_db(id_device, port, uid, description):
