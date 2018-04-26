@@ -100,7 +100,7 @@ def get_user_login(uid):
         return raw_input('Please input description: ')
 
 
-def add_new_unit_in_db(id_device, port, uid, description):
+def add_new_unit_in_db(id_device, port, uid, description, serial_number):
     cursor4 = db.cursor()
     cursor4.execute('INSERT INTO `devices_abonents`(`gid`, '
                     '                               `uid`,'
@@ -110,7 +110,8 @@ def add_new_unit_in_db(id_device, port, uid, description):
                     'VALUES (\''+str(id_device)+'\','
                     '        \''+str(uid)+'\','
                     '        \''+str(port)+'\','
-                    '        \''+str(description)+'\', \'\')')
+                    '        \''+str(description)+'\','
+                    '        \''+str(serial_number)+'\')')
 
 
 def check_uid(uid):
@@ -184,7 +185,7 @@ def main():
             print 'Configure new terminal on the station'
             configure_new_unit(row[1], row[4], next_unit, serial_number, user_login, row[2], row[3])
             print 'Add terminal in the NETWORK'
-            add_new_unit_in_db(row[0], next_unit, uid, user_login)
+            add_new_unit_in_db(row[0], next_unit, uid, user_login, serial_number)
             print 'Work is done!'
             raise exit(0)
 
