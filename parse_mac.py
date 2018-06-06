@@ -106,6 +106,7 @@ def check_serial_number_is_new(id_device, id_port, serial_number):
 def main():
     global db
     config = ConfigParser.ConfigParser()
+    # config.read(r'/usr/local/src/LTP_config_master/config.cfg')
     config.read(r'/home/dima/PycharmProjects/LTP_config_master/config.cfg')
 
     host_name = config.get('database', 'host')
