@@ -6,8 +6,9 @@ import time
 import telnetlib
 
 
-def get_mac(ip_address, port_number, unit_number, user_name_device, password_device):
+def set_connection(ip_address, user_name_device, password_device):
 
+    print "set_connection"
     tn = telnetlib.Telnet(ip_address)
     tn.read_until('login: ', 3)
     tn.write(user_name_device)
@@ -15,12 +16,20 @@ def get_mac(ip_address, port_number, unit_number, user_name_device, password_dev
     tn.read_until('Password: ', 3)
     tn.write(password_device)
     tn.write("\r")
-    tn.read_until('LTP-8X# ', 5)
+    tn.read_until("LTP-8X# ", 5)
+    return tn
+
+
+def get_mac(tn, port_number, unit_number):
+
+    tn.read_until("LTP-8X# ", 5)
     tn.write('show mac interface ont '+str(port_number)+'/' + str(unit_number) + '\n')
     tn.write("\r")
     out = tn.read_until("LTP-8X# ", 5)
-    tn.write('exit' + '\n')
-    tn.close()
+    tn.write("\r")
+    tn.write('show version\n')
+    tn.write("\r")
+    tn.read_until("LTP-8X# ", 5)
 
     start_position = out.find(':') - 2
     end_position = start_position + 17
@@ -32,21 +41,16 @@ def get_mac(ip_address, port_number, unit_number, user_name_device, password_dev
         return None
 
 
-def get_serial_number(ip_address, port_number, unit_number, user_name_device, password_device):
+def get_serial_number(tn, port_number, unit_number):
 
-    tn = telnetlib.Telnet(ip_address)
-    tn.read_until('login: ', 3)
-    tn.write(user_name_device)
-    tn.write('\r')
-    tn.read_until('Password: ', 3)
-    tn.write(password_device)
-    tn.write("\r")
-    tn.read_until('LTP-8X# ', 5)
+    tn.read_until("LTP-8X# ", 5)
     tn.write('show interface ont ' + str(port_number) + '/' + str(unit_number) + ' state\n')
     tn.write("\r")
     out = tn.read_until("LTP-8X# ", 5)
-    tn.write('exit' + '\n')
-    tn.close()
+    tn.write("\r")
+    tn.write('show version\n')
+    tn.write("\r")
+    tn.read_until("LTP-8X# ", 5)
 
     start_position = out.find('ELTX')
     end_position = start_position + 12
@@ -133,11 +137,24 @@ def main():
                    "LEFT JOIN devices_ports ON devices_ports.gid = devices.id "
                    "                        AND devices_ports.port = devices_abonents.port "
                    "WHERE devices.type = 43 "
-                   "LIMIT 10000")
+                   "ORDER BY devices.ip "
+                   "LIMIT 1000")
+
+    previous_ip = ''
+    tn = None
 
     for row in cursor.fetchall():
-        mac = get_mac(row[3], row[1], row[2], row[4], row[5])
-        serial_number = get_serial_number(row[3], row[1], row[2], row[4], row[5])
+
+        if row[3] != previous_ip:
+
+            if tn is not None:
+                tn.close()
+
+            tn = set_connection(row[3], row[4], row[5])
+            previous_ip = row[3]
+
+        mac = get_mac(tn, row[1], row[2])
+        serial_number = get_serial_number(tn, row[1], row[2])
 
         if mac is None:
             print 'Mac is None'
