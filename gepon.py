@@ -1,30 +1,11 @@
 #!/usr/bin/env python
 
-import ConfigParser
-import datetime
-import getpass
-import MySQLdb
 import time
 import telnetlib
-
-
-def write_in_log(message):
-
-    global path_to_log_file
-
-    try:
-        log_file = open(path_to_log_file, 'a', buffering=-1)
-    except IOError as e:
-        print "Can not open log file. I/O Error({0}): {1}".format(e.errno, e.strerror)
-        exit(1)
-    else:
-        date_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        wil_result_message = date_time + " " + message
-
-        del date_time
-
-        log_file.write(wil_result_message + '\n')
-        log_file.close()
+from global_variables import db
+from functions import get_next_unit
+from functions import write_in_log
+from functions import write_in_log_program_end
 
 
 def get_new_terminal(ip_address, user_name_device, password_device):
@@ -56,17 +37,6 @@ def get_new_terminal(ip_address, user_name_device, password_device):
                 return result[2][:1], result[3]
 
     return 0
-
-
-def get_next_unit(id_device):
-    global db
-    cursor2 = db.cursor()
-    cursor2.execute('SELECT MAX(port) + 1 FROM `devices_abonents` WHERE `gid` = ' + str(id_device))
-    row = cursor2.fetchone()
-    if row[0] is not None:
-        return row[0]
-    else:
-        return 1
 
 
 def configure_new_unit_st(ip_address,
@@ -196,22 +166,6 @@ def configure_new_unit_dtu(ip_address,
         tn.close()
 
 
-def get_user_login(uid):
-    global db
-    cursor3 = db.cursor()
-    cursor3.execute('SELECT `user` FROM `billing_users` WHERE `id` = ' + str(uid))
-
-    if cursor3.rowcount != 0:
-        row = cursor3.fetchone()
-        return row[0]
-    else:
-        print 'Description was not found.'
-        write_in_log("Description was not found for UID " + uid + ".")
-        manual_user_description = raw_input('Please input description: ')
-        write_in_log("Description was received from user " + manual_user_description + ".")
-        return manual_user_description
-
-
 def add_new_unit_in_db(id_device, port, uid, description, channel):
     cursor4 = db.cursor()
     cursor4.execute('INSERT INTO `devices_abonents`(`gid`, '
@@ -226,56 +180,7 @@ def add_new_unit_in_db(id_device, port, uid, description, channel):
                     '        \''+str(channel)+'\')')
 
 
-def check_uid(uid):
-    try:
-        return int(uid)
-    except ValueError:
-        print "Was receive bad UID."
-        write_in_log("Was receive bad UID")
-        print "Program cosed. Please start program again adn input valid UID."
-        write_in_log("PROGRAM END--------------------------------------------------")
-        return False
-
-
-def main():
-    global db
-    global path_to_log_file
-    config = ConfigParser.ConfigParser()
-    config.read(r'/home/dima/PycharmProjects/LTP_config_master/config.cfg')
-
-    host_name = config.get('database', 'host')
-    user_name = config.get('database', 'user')
-    password = config.get('database', 'passwd')
-    db_name = config.get('database', 'db')
-    path_to_log_file = config.get('log', 'path_to_log_file')
-
-    write_in_log("PROGRAM START--------------------------------------------------")
-    write_in_log("USER " + getpass.getuser())
-
-    uid = raw_input("Input UID: ")
-    write_in_log("UID is " + uid)
-
-    if check_uid(uid) is False:
-        write_in_log("Input bad UID " + uid + ". Program was closed.")
-        write_in_log("PROGRAM END--------------------------------------------------")
-        raise SystemExit(4)
-
-    db = MySQLdb.connect(host=host_name,
-                         user=user_name,
-                         passwd=password,
-                         db=db_name)
-
-    user_login = get_user_login(uid)
-    print 'Description is ' + user_login + '.'
-    write_in_log("Description is " + user_login)
-    user_report = str(raw_input("Is true? (y/n): "))
-
-    if user_report != 'Y' and user_report != 'y':
-        print "Was receive negative answer from user."
-        write_in_log("Was receive negative answer from user.")
-        print "Program cosed. Please start program again."
-        write_in_log("PROGRAM END--------------------------------------------------")
-        raise SystemExit(1)
+def main(uid, user_login):
 
     cursor = db.cursor()
 
@@ -322,7 +227,7 @@ def main():
                     print "Was receive negative answer from user. Because serial number is wrong."
                     write_in_log("Was receive negative answer from user. Because serial number is wrong.")
                     print "Program cosed. Please start program again."
-                    write_in_log("PROGRAM END--------------------------------------------------")
+                    write_in_log_program_end()
                     raise SystemExit(1)
 
                 print 'Configure new terminal on the station'
@@ -350,13 +255,3 @@ def main():
         else:
             print 'No unactivated terminal in the device ' + str(row[1]) + ' OLT-' + olt
             write_in_log('No unactivated terminal in the device ' + str(row[1]) + ' OLT-' + olt)
-
-
-if __name__ == '__main__':
-
-    db = None
-    path_to_log_file = None
-    main()
-    print "Nothing to do. There is no an unactivated terminal."
-    write_in_log("Nothing to do. There is no an unactivated terminal.")
-    write_in_log("PROGRAM END--------------------------------------------------")
