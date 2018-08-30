@@ -24,14 +24,28 @@ def write_in_log_program_end():
     write_in_log("PROGRAM END--------------------------------------------------")
 
 
-def get_next_unit(id_device):
+def get_next_unit(device_id):
     cursor2 = db.cursor()
-    cursor2.execute('SELECT MAX(port) + 1 FROM `devices_abonents` WHERE `gid` = ' + str(id_device))
+    cursor2.execute('SELECT MAX(port) + 1 FROM `devices_abonents` WHERE `gid` = ' + str(device_id))
     row = cursor2.fetchone()
     if row[0] is not None:
         return row[0]
     else:
         return 1
+
+
+def get_device_id(ip_address, pon_port):
+    cursor2 = db.cursor()
+
+    cursor2.execute('SELECT id ' 
+                    'FROM `devices` '
+                    'WHERE `ip` = \'' + str(ip_address) + '\''
+                    '  AND `address_dorway` = \'' + str(pon_port) + '\'')
+    row = cursor2.fetchone()
+    if row[0] is not None:
+        return row[0]
+    else:
+        return -1
 
 
 def check_uid(uid):

@@ -35,8 +35,8 @@ if __name__ == '__main__':
         raise SystemExit(1)
 
     print 'What we will set up?'
-    print 'If GePON choice - 1'
-    print 'If GPON choice  - 2'
+    print '1 - GePON (TURBO GPON)'
+    print '2 - GPON'
 
     user_report2 = str(raw_input("Your choice: "))
     if user_report2 == '1':

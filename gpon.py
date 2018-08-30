@@ -5,10 +5,13 @@ import telnetlib
 from global_variables import db
 from functions import get_next_unit
 from functions import write_in_log
+from functions import get_device_id
 from functions import write_in_log_program_end
 
 
-def get_sn_new_terminal(ip_address, port_number, user_name_device, password_device):
+def get_sn_array_new_terminal(ip_address, user_name_device, password_device):
+
+    array_of_new_terminals = []
 
     try:
         tn = telnetlib.Telnet(ip_address)
@@ -24,26 +27,25 @@ def get_sn_new_terminal(ip_address, port_number, user_name_device, password_devi
         tn.write("\r")
         time.sleep(3)
         tn.read_until('LTP-8X# ', 5)
-        # tn.write('show interface ont ' + str(port_number) + ' connected\n')
-        tn.write('show interface ont ' + str(port_number) + ' unactivated\n')
+        # tn.write('show interface ont 0-7 connected\n')
+        tn.write('show interface ont 0-7 unactivated\n')
         tn.write("\r")
         out = tn.read_until("LTP-8X# ", 5)
         tn.write('exit' + '\n')
         tn.close()
 
-        start_position = 0
-        sn_list = []
         sn_count = 0
 
-        while out.find('ELTX', start_position) != -1:
-            start_position = out.find('ELTX', start_position)
-            sn_list.append(out[start_position:start_position + 12])
-            start_position += 12
-            sn_count += 1
+        for line in out.split('\n'):
+            line = list(line.split())
+            if len(line) > 4 and line[4] == 'UNACTIVATED':
+                new_terminal = [line[1], line[3]]
+                array_of_new_terminals.append(new_terminal)
+                sn_count += 1
 
-        sn_list.append(sn_count)
+        array_of_new_terminals.append(sn_count)
 
-        return sn_list
+        return array_of_new_terminals
 
     return [-1]
 
@@ -125,29 +127,29 @@ def main(uid, user_login):
     cursor.execute("SELECT  `id`,"
                    "        `ip`,"
                    "        `access_username`,"
-                   "        `access_password`,"
-                   "        `address_dorway`"
+                   "        `access_password` "
                    "FROM `devices`"
-                   "WHERE `ping` = '1' AND `type` = '43' "
-                   "ORDER BY `address_dorway`")
+                   "WHERE `ping` = '1' AND `type` = '43' AND  `address_dorway` = '0'")
 
     for row in cursor.fetchall():
 
-        serial_number_list = get_sn_new_terminal(row[1], row[4], row[2], row[3])
+        serial_number_list = get_sn_array_new_terminal(row[1], row[2], row[3])
 
         if serial_number_list[0] == 0:
-            print "No unactivated terminal in the device " + str(row[1]) + ", port " + row[4] + "."
-            write_in_log("No unactivated terminal in the device " + str(row[1]) + ", port " + row[4])
+            print "No unactivated terminal in the device " + str(row[1]) + "."
+            write_in_log("No unactivated terminal in the device " + str(row[1]) + ".")
         elif serial_number_list[0] == -1:
             pass
         else:
             for i in range(0, serial_number_list[-1]):
-                serial_number = serial_number_list[i]
-                next_unit = get_next_unit(row[0])
-                print 'The device '+str(row[1])+', port '+row[4]+' has a new unit '+serial_number+'.' \
+                serial_number = serial_number_list[i][0]
+                pon_port = serial_number_list[i][1]
+                device_id = get_device_id(row[1], pon_port)
+                next_unit = get_next_unit(device_id)
+                print 'The device '+str(row[1])+', port '+pon_port+' has a new unit '+serial_number+'.' \
                     ' His number in the device '+str(next_unit)+'.'
 
-                write_in_log('The device '+str(row[1])+', port '+row[4]+' has a new unit ' +
+                write_in_log('The device '+str(row[1])+', port '+pon_port+' has a new unit ' +
                              serial_number + ' His number in the device '+str(next_unit)+'.')
 
                 print 'Serial number is ' + serial_number + '.'
@@ -162,10 +164,10 @@ def main(uid, user_login):
                 print "Configure new terminal on the station"
                 write_in_log("Configure new terminal on the station")
 
-                if configure_new_unit(row[1], row[4], next_unit, serial_number, user_login, row[2], row[3]):
+                if configure_new_unit(row[1], pon_port, next_unit, serial_number, user_login, row[2], row[3]):
                     print "Add terminal in the NETWORK"
                     write_in_log("Add terminal in the NETWORK")
-                    add_new_unit_in_db(row[0], next_unit, uid, user_login, serial_number)
+                    add_new_unit_in_db(device_id, next_unit, uid, user_login, serial_number)
                     print "Work is done!"
                     write_in_log("Work is done!")
                 else:
