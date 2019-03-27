@@ -47,16 +47,43 @@ def configure_new_unit_st(ip_address,
                           user_name_device,
                           password_device):
 
-    channel_to_rules = {
-        '0': '1',
-        '1': '2',
-        '2': '3',
-        '3': '4',
-        '4': '6',
-        '5': '7',
-        '6': '8',
-        '7': '9'
-    }
+    print 'What the type of optical terminal?'
+    print '1 - NTE-2'
+    print '2 - NTE-RG-1402G'
+
+    type_of_unit = str(raw_input("Your choice (1 or 2): "))
+
+    if type_of_unit == '1':
+        print 'NTE-2 was selected'
+        write_in_log('NTE-2 was selected')
+        type_of_unit_st = 'NTE-2'
+        channel_to_rules = {
+            '0': '1',
+            '1': '2',
+            '2': '3',
+            '3': '4',
+            '4': '6',
+            '5': '7',
+            '6': '8',
+            '7': '9'
+        }
+    elif type_of_unit == '2':
+        print 'NTE-RG-1402G was selected'
+        write_in_log('NTE-RG-1402G was selected')
+        type_of_unit_st = 'NTE-RG-1402G-W:rev.B'
+        channel_to_rules = {
+            '0': '11',
+            '1': '12',
+            '2': '13',
+            '3': '14',
+            '4': '15',
+            '5': '10',
+            '6': '16',
+            '7': '17'
+        }
+    else:
+        print 'Your choice is not allowable'
+        raise SystemExit(1)
 
     try:
         tn = telnetlib.Telnet(ip_address)
@@ -96,7 +123,7 @@ def configure_new_unit_st(ip_address,
         tn.write('set profile path 1\n')
         tn.write("\r")
         tn.read_until("# ", 5)
-        tn.write('set type NTE-2\n')
+        tn.write('set type ' + type_of_unit_st + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
         tn.write('reconfigure\n')
@@ -118,6 +145,26 @@ def configure_new_unit_dtu(ip_address,
                            new_unit_description,
                            user_name_device,
                            password_device):
+
+    print 'What the type of optical terminal?'
+    print '1 - NTE-2'
+    print '2 - NTE-RG-1402G'
+
+    type_of_unit = str(raw_input("Your choice (1 or 2): "))
+
+    if type_of_unit == '1':
+        print 'NTE-2 was selected'
+        write_in_log('NTE-2 was selected')
+        type_of_unit_st = 'NTE-2'
+        rule_st = '1'
+    elif type_of_unit == '2':
+        print 'NTE-RG-1402G was selected'
+        write_in_log('NTE-RG-1402G was selected')
+        type_of_unit_st = 'NTE-RG-1402G-W:rev.B'
+        rule_st = '2'
+    else:
+        print 'Your choice is not allowable'
+        raise SystemExit(1)
 
     try:
         tn = telnetlib.Telnet(ip_address)
@@ -147,10 +194,10 @@ def configure_new_unit_dtu(ip_address,
         tn.write('set description ' + new_unit_description + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
-        tn.write('set profile rules 1\n')
+        tn.write('set profile rules ' + rule_st + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
-        tn.write('set type NTE-2\n')
+        tn.write('set type ' + type_of_unit_st + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
         tn.write('reconfigure\n')
@@ -235,7 +282,7 @@ def main(uid, user_login):
                 if row[1] == '10.0.1.82':
                     write_in_log("Configure new terminal on the station " + row[1])
                     configure_new_unit_st(row[1], channel, next_unit, mac, user_login, row[2], row[3])
-                elif row[1] == '10.0.1.103':
+                elif row[1] == '10.0.1.104':
                     write_in_log("Configure new terminal on the station " + row[1])
                     configure_new_unit_dtu(row[1], next_unit, mac, user_login, row[2], row[3])
                 else:
