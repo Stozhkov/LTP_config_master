@@ -1,8 +1,9 @@
 import ConfigParser
 import MySQLdb
+import os
 
 config = ConfigParser.ConfigParser()
-config.read('config.cfg')
+config.read(os.path.abspath(os.path.curdir)+'/'+'config.cfg')
 
 host_name = config.get('database', 'host')
 user_name = config.get('database', 'user')
