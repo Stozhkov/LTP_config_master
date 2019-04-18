@@ -24,7 +24,6 @@ def get_new_terminal(ip_address, user_name_device, password_device):
         tn.write("\r")
         time.sleep(3)
         tn.read_until('LTE-2X# ', 5)
-        # tn.write('show ont list grep ok\n')
         tn.write('show ont list grep unc\n')
         tn.write("\r")
         out = tn.read_until("LTE-2X# ", 5)

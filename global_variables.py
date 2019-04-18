@@ -2,8 +2,7 @@ import ConfigParser
 import MySQLdb
 
 config = ConfigParser.ConfigParser()
-# config.read(r'/usr/local/src/LTP_config_master/config.cfg')
-config.read(r'/home/dima/PycharmProjects/LTP_config_master/config.cfg')
+config.read('config.cfg')
 
 host_name = config.get('database', 'host')
 user_name = config.get('database', 'user')

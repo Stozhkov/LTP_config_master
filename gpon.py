@@ -27,7 +27,6 @@ def get_sn_array_new_terminal(ip_address, user_name_device, password_device):
         tn.write("\r")
         time.sleep(3)
         tn.read_until('LTP-8X# ', 5)
-        # tn.write('show interface ont 0-7 connected\n')
         tn.write('show interface ont 0-7 unactivated\n')
         tn.write("\r")
         out = tn.read_until("LTP-8X# ", 5)
@@ -57,6 +56,23 @@ def configure_new_unit(ip_address,
                        new_unit_description,
                        user_name_device,
                        password_device):
+    print 'What the type of optical terminal?'
+    print '1 - NTU-1'
+    print '2 - NTU-RG-1402G'
+
+    type_of_unit = str(raw_input("Your choice (1 or 2): "))
+
+    if type_of_unit == '1':
+        print 'NTU-1 was selected'
+        write_in_log('NTU-1 was selected')
+        template = 'port' + str(port_number)
+    elif type_of_unit == '2':
+        print 'NTU-RG-1402G was selected'
+        write_in_log('NTU-RG-1402G was selected')
+        template = 'port' + str(port_number) + '-rg'
+    else:
+        print 'Your choice is not allowable'
+        raise SystemExit(1)
 
     try:
         tn = telnetlib.Telnet(ip_address)
@@ -85,7 +101,7 @@ def configure_new_unit(ip_address,
         tn.write('serial ' + new_unit_serial + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
-        tn.write('template port' + str(port_number) + '\n')
+        tn.write('template ' + template + '\n')
         tn.write("\r")
         tn.read_until("# ", 5)
         tn.write('do commit\n')
