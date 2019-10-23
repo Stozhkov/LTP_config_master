@@ -26,7 +26,13 @@ def write_in_log_program_end():
 
 def get_next_unit(device_id):
     cursor2 = db.cursor()
-    cursor2.execute('SELECT MAX(port) + 1 FROM `devices_abonents` WHERE `gid` = ' + str(device_id))
+    cursor2.execute('SELECT MIN(`port`) '
+                    'FROM `devices_ports` '
+                    'WHERE `gid` = ' + str(device_id) + ' AND '
+                    '   `port` NOT IN (SELECT `port` '
+                    '                   FROM `devices_abonents` '
+                    '                   WHERE `gid` = ' + str(device_id) + ')')
+
     row = cursor2.fetchone()
     if row[0] is not None:
         return row[0]
