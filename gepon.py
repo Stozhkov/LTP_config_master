@@ -278,7 +278,10 @@ def main(uid, user_login):
 
                 print 'Configure new terminal on the station'
 
-                if row[1] == '10.0.1.82' or row[1] == '10.0.1.84':
+                if row[1] == '10.0.1.82':
+                    write_in_log("Configure new terminal on the station " + row[1])
+                    configure_new_unit_st(row[1], channel, next_unit, mac, user_login, row[2], row[3])
+                elif row[1] == '10.0.1.84':
                     write_in_log("Configure new terminal on the station " + row[1])
                     configure_new_unit_st(row[1], channel, next_unit, mac, user_login, row[2], row[3])
                 elif row[1] == '10.0.1.104':
