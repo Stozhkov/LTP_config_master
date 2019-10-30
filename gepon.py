@@ -212,6 +212,95 @@ def configure_new_unit_dtu(ip_address,
         tn.close()
 
 
+def configure_new_unit_dtu_85(ip_address, channel,
+                           new_unit_number,
+                           new_unit_mac,
+                           new_unit_description,
+                           user_name_device,
+                           password_device):
+
+    print 'What the type of optical terminal?'
+    print '1 - NTE-2'
+    print '2 - NTE-RG-1402G'
+
+    type_of_unit = str(raw_input("Your choice (1 or 2): "))
+
+    if type_of_unit == '1':
+        print 'NTE-2 was selected'
+        write_in_log('NTE-2 was selected')
+        type_of_unit_st = 'NTE-2'
+        channel_to_rules = {
+            '0': '3',
+            '1': '4'
+        }
+    elif type_of_unit == '2':
+        print 'NTE-RG-1402G was selected'
+        write_in_log('NTE-RG-1402G was selected')
+        type_of_unit_st = 'NTE-RG-1402G-W:rev.B'
+        channel_to_rules = {
+            '0': '1',
+            '1': '2'
+        }
+    else:
+        print 'Your choice is not allowable'
+        raise SystemExit(1)
+
+    try:
+        tn = telnetlib.Telnet(ip_address)
+    except Exception as e:
+        print "Can not connect to LTE " + ip_address + \
+              " for configure new terminal. I/O Error({0}): {1}".format(e.errno, e.strerror)
+        write_in_log("Can not connect to LTE " + ip_address +
+                     " for configure new terminal. I/O Error({0}): {1}".format(e.errno, e.strerror))
+    else:
+        tn.read_until('login: ', 3)
+        tn.write(user_name_device)
+        tn.write('\r')
+        tn.read_until('Password: ', 3)
+        tn.write(password_device)
+        tn.write("\r")
+        time.sleep(3)
+        tn.read_until('LTE-2X# ', 5)
+        tn.write('add ont config ' + new_unit_mac + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('ont_mac ' + new_unit_mac + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set olt channel ' + str(channel) + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set id ' + str(new_unit_number) + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set description ' + new_unit_description + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set profile rules ' + channel_to_rules[channel] + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set profile ports 1\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set profile path 1\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('set type ' + type_of_unit_st + '\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('reconfigure\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('save\n')
+        tn.write("\r")
+        tn.read_until("# ", 15)
+        tn.write('exit\n')
+        tn.write("\r")
+        tn.read_until("# ", 5)
+        tn.write('exit\n')
+        tn.close()
+
+
 def add_new_unit_in_db(id_device, port, uid, description, channel):
     cursor4 = db.cursor()
     cursor4.execute('INSERT INTO `devices_abonents`(`gid`, '
@@ -284,6 +373,9 @@ def main(uid, user_login):
                 elif row[1] == '10.0.1.84':
                     write_in_log("Configure new terminal on the station " + row[1])
                     configure_new_unit_st(row[1], channel, next_unit, mac, user_login, row[2], row[3])
+                elif row[1] == '10.0.1.85':
+                    write_in_log("Configure new terminal on the station " + row[1])
+                    configure_new_unit_dtu_85(row[1], channel, next_unit, mac, user_login, row[2], row[3])
                 elif row[1] == '10.0.1.104':
                     write_in_log("Configure new terminal on the station " + row[1])
                     configure_new_unit_dtu(row[1], next_unit, mac, user_login, row[2], row[3])
